@@ -1,9 +1,18 @@
 package rpp2022backend.controller;
 
+import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import rpp2022backend.model.Artikl;
@@ -27,8 +36,52 @@ public class ArtiklController {
 	*/
 
 	@GetMapping("artikl")
-	public List<Artikl> getAll(){
-		return artiklService.getAll();
+	public ResponseEntity<List<Artikl>> getAll(){
+		List<Artikl> artikls = artiklService.getAll();
+        return new ResponseEntity<>(artikls, HttpStatus.OK);
+	}
+	
+	   
+	@GetMapping("artikl/{id}")
+	public ResponseEntity<Artikl> getOne(@PathVariable("id") Integer id) {
+		if (artiklService.findById(id).isPresent()) {
+			Optional<Artikl> artiklOpt = artiklService.findById(id);
+	        return new ResponseEntity<>(artiklOpt.get(), HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+		}
+	}
+	
+	@GetMapping("artikl/naziv/{naziv}")
+	public ResponseEntity<List<Artikl>> getByNaziv(@PathVariable("naziv") String naziv) {
+		List<Artikl> artikls = artiklService.findByNazivContainingIgnoreCase(naziv);
+	    return new ResponseEntity<>(artikls, HttpStatus.OK);
+	}
+	
+	@PostMapping("artikl")
+	public ResponseEntity<Artikl> addArtikl(@RequestBody Artikl artikl) {
+		Artikl savedArtikl = artiklService.save(artikl);
+	    URI location = URI.create("/artikl/" + savedArtikl.getId());
+		return ResponseEntity.created(location).body(savedArtikl);
+	}
+	
+	@PutMapping(value = "artikl/{id}")
+	public ResponseEntity<Artikl> updateArtikl(@RequestBody Artikl artikl, @PathVariable("id") Integer id) {
+		if (artiklService.existsById(id)) {
+			artikl.setId(id);
+			Artikl savedArtikl = artiklService.save(artikl);
+			return ResponseEntity.ok().body(savedArtikl);
+		}
+	    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+	
+	@DeleteMapping("artikl/{id}")
+	public ResponseEntity<HttpStatus> delete(@PathVariable Integer id) {
+		if (artiklService.existsById(id)) {
+			artiklService.deleteById(id);
+	        return new ResponseEntity<HttpStatus>(HttpStatus.OK);
+		}
+		return new ResponseEntity<HttpStatus>(HttpStatus.NOT_FOUND);
 	}
 
 }
